@@ -453,17 +453,15 @@ Sinta‐se à vontade para:
 - **Enviar pull requests** para melhorias (ex.: adicionar +50% de contingência automática, criar API call para REDCap etc.).
 - Dar crédito ou adaptar o código conforme sua necessidade.
 
-Este projeto está licenciado sob [MIT License](LICENSE) (ou outra licença de sua escolha).
-
 ---
 
 ## 9. Contato
 
 Para dúvidas ou sugestões, abra uma issue ou entre em contato com o autor:
 
-- **Nome:** Seu Nome
-- **E‐mail:** seu.email@dominio.com
-- **Empresa:** Sua Empresa (Ex.: Clínica de Pesquisa XYZ)
+- **Nome:** Edaurdo Augusto Rabelo Socca
+- **E‐mail:** eduardo_socca@yahoo.com.br
+- **Empresa:** Science Valley Research Institute (SVRI)
 
 Obrigado por utilizar este script!  
 Boa sorte no seu ensaio clínico! 🚀
