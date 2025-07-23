@@ -122,35 +122,18 @@ print(df_registros)
 # Calcular quantas ampolas são necessárias por grupo e sexo (com desvio de + 50%)
 # ====================================================================================#
 # Neste estudo Homens receberão dois pellets (ampolas) e Mulheres receberão um pellet (ampola)
-# As ampolas deverão ser catalogadas por centro e braco (exemplo: para as ampolas do centro 1 para o braco 2506092, o nome devera cer "centro_1_P001", "centro_1_P002", etc.)
-# O número de ampolas por centro e braco será igual ao número previsto de participantes alocados no braco (com desvio de + 50%)
+# As ampolas serão caracterizadas pelo ID do centro (18 a 27), pelo Braço do estudo (2506091 para Oxandrolona e 2506092 para Placebo) e pelo número da ampola (001 a 108 para 2506091 e 109 a 216 para 2506092).
+# Cada homem recebera duas ampolas cada braço (Oxandrolona ou Placebo) e as mulheres 1 ampola (Oxandrolona ou Placebo). Caso o homem seja alocado no braço 2506091, ele receberá duas ampolas de Oxandrolona, e se for alocado no braço 2506092, receberá duas ampolas de Placebo. Caso a mulher seja alocada no braço 2506091, ela receberá uma ampola de Oxandrolona, e se for alocada no braço 2506092, receberá uma ampola de Placebo.
+# O número da ampola é único e não deve se repetir entre os participantes, ou seja, cada participante receberá uma ampola com um número único.
+# para faciliar a distribuição entre os centros, imaginando que eles receberão o mesmo número de ampolas de oxandrolona e placebos, sabendo que serão 216 ampolas no total, sendo 108 de Oxandrolona e 108 de Placebo.
+# Cada bloco terá 4 indivíduos, sendo 2 homens e 2 mulheres. Em adicional, cada bloco terá 1 homem alocado no braço 2506091 (Oxandrolona) e 1 homem alocado no braço 2506092 (Placebo), e 1 mulher alocada no braço 2506091 (Oxandrolona) e 1 mulher alocada no braço 2506092 (Placebo). Dessa forma, cada braço recebera 3 ampolas de Oxandrolona e 3 ampolas de Placebo, totalizando 6 ampolas por bloco.
+# Como cada centro terá 16 participantes, e cada bloco tem 4 participantes, cada centro terá 4 blocos, totalizando 24 ampolas por centro (12 de Oxandrolona e 12 de Placebo).
 
-b1_estrato_2_a = sum(
-    1 for r in registros
-    if r['Gênero'] == 'Masculino' and r['Alocação'] == '2506091')*2
-b1_estrato_2_b = sum(
-    1 for r in registros
-    if r['Gênero'] == 'Feminino' and r['Alocação'] == '2506091'
-)
-total_ampolas_2506091 = (b1_estrato_2_a  + b1_estrato_2_b)  # +50% de desvio
+braco_1_estrato_2_a = '2506091'  # Braço 1 (Oxandrolona)
+braco_1_estrato_2_b = '2506091'  # Braço 2 (Oxandrolona)
+braco_2_estrato_2_a = '2506092'  # Braço 1 (Placebo)
+braco_2_estrato_2_b = '2506092'  # Braço 2 (Placebo)
 
-b2_estrato_2_a = sum(
-    1 for r in registros
-    if r['Gênero'] == 'Masculino' and r['Alocação'] == '2506092')*2
-
-b2_estrato_2_b = sum(
-    1 for r in registros
-    if r['Gênero'] == 'Feminino' and r['Alocação'] == '2506092'
-)
-
-total_ampolas_2506092 = (b2_estrato_2_a + b2_estrato_2_b)  # +50% de desvio
-
-
-total_geral = total_ampolas_2506091 + total_ampolas_2506092
-
-print(b1_estrato_2_a, b1_estrato_2_b, total_ampolas_2506091)
-print(b2_estrato_2_a, b2_estrato_2_b, total_ampolas_2506092)
-print("Total de ampolas:", total_geral)
 # ====================================================================================#
 # Calcular a quantidade de ampolas necessárias por centro e braço
 # ====================================================================================#
@@ -193,7 +176,8 @@ def gerar_etiquetas_ampola(centro:int, braco: str, numero: int) -> list:
     - centro: é o número do centro (exemplo: 18,19,20,21,22,23,24,25,26,27). Cada centro receberá uma quantidade exata de ampolas (18 ampolas de 2506091 e 18 ampolas de 2506092)
     -- O centro 18 receberá as ampolas 3 ampolas de 2506091 e 3 de 2506092, sendo 2 ampolas de 2506091 para homens e 1 ampola para mulheres. O mesmo para as ampolas de 2506092.
     - braco: é o braço do estudo (exemplo: "2506092" para 2506092, "2506091" para Oxandrolona)
-    - numero: é o número da amostra (001 a 108 para o 2506091 e 109 a 216 para o 2506092)
+    - numero: é o número da amostra (001 a 108 para o 2506091 e 109 a 216 para o 2506092), totalizando 216 ampolas
+    O número da amostra é preenchido com zeros à esquerda para ter sempre 3 dígitos (exemplo: 001, 002, ..., 108 para 2506091 e 109, 110, ..., 216 para 2506092).
     Os códigos serão embaralhados antes de retornar para garantir aleatoriedade na distribuição
     """
     etiquetas = []
