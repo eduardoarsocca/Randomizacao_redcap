@@ -18,9 +18,10 @@ Além disso, o script calcula a quantidade de ampolas (vials) necessárias por b
  ┣ 📂csv/
  ┃ ┗ randomizacao_redcap.csv         ← Arquivo CSV gerado
  ┣ 📂xlsx/
- ┃ ┗ randomizacao_redcap.xlsx       ← Arquivo Excel gerado
- ┣ 📜randomizacao.py                ← Script principal em Python
- ┗ 📜README.md                      ← Documentação (este arquivo)
+ ┃ ┗ randomizacao_redcap.xlsx
+ ┣ 📂projeto/
+ ┃ ┗ 📜randomizacao.py              ← Script principal em Python      
+ ┣ 📜README.md                      ← Documentação (este arquivo)
 ```
 
 > **Observação**: Antes de executar o script, certifique‐se de que as pastas `csv/` e `xlsx/` existem na raiz do projeto (ou crie‐as manualmente). Caso contrário, o Python levantará erro ao tentar salvar os arquivos.
@@ -453,24 +454,16 @@ Sinta‐se à vontade para:
 - **Enviar pull requests** para melhorias (ex.: adicionar +50% de contingência automática, criar API call para REDCap etc.).
 - Dar crédito ou adaptar o código conforme sua necessidade.
 
-<<<<<<< HEAD
 
 
-=======
->>>>>>> e9937e9b8daaa000f0cf9f5cac1d29e4151501be
 ---
 
 ## 9. Contato
 
 Para dúvidas ou sugestões, abra uma issue ou entre em contato com o autor:
 
-<<<<<<< HEAD
 - **Nome:** Eduardo Augusto Rabelo Socca
 - **E‐mail:** eduardo.socca@svriglobal.com
-=======
-- **Nome:** Edaurdo Augusto Rabelo Socca
-- **E‐mail:** eduardo_socca@yahoo.com.br
->>>>>>> e9937e9b8daaa000f0cf9f5cac1d29e4151501be
 - **Empresa:** Science Valley Research Institute (SVRI)
 
 Obrigado por utilizar este script!  
