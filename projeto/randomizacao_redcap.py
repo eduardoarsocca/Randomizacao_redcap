@@ -12,19 +12,25 @@ import openpyxl
 random.seed(42)
 
 #tamanho da amostra (n)
-total_participantes = 96  
+total_participantes = 160  
 
 # Variáveis de interesse
 # Estrato 1: Centros (Sites)
-estrato_centros = [1,2,3,4]
+estrato_centros = [18,19,20,21,22,23,24,25,26,27]  # Lista de centros (códigos dos centros)
 
 #Meta do total de participantes por centro
 #Cade centro tem uma meta unica de participantes, mas o total de participantes no estudo (somando todos os centros) é fixo em total_participantes
 meta_participantes_por_centro = {
-    1: 24,  
-    2: 24,  
-    3: 24,  
-    4: 24
+    18: 16,
+    19: 16,
+    20: 16,
+    21: 16,
+    22: 16,
+    23: 16,
+    24: 16,
+    25: 16,
+    26: 16,
+    27: 16
 }
 
 # os participentes serão alocados em cada centro de acordo com a meta de participantes por centro
@@ -52,7 +58,7 @@ participantes_por_genero_por_centro = participantes_por_centro // 2
 # ====================================================================================#
 # Parâmetros de randomização em blocos (block randomization)
 # ====================================================================================#
- # Tamanho do bloco
+## Tamanho do bloco
 tamanho_bloco = 4
 assert participantes_por_genero_por_centro % tamanho_bloco == 0,(
     f"O número de participantes por gênero em cada centro ({participantes_por_genero_por_centro})"
@@ -73,7 +79,7 @@ def criar_blocos_randomizacao(tamanho_amostral: int, tamanho_bloco: int) -> list
     total_blocos = tamanho_amostral // tamanho_bloco
     print(total_blocos, type(total_blocos))
     for _ in range(total_blocos):
-        bloco = (['Tratamento'] * (tamanho_bloco //2) + ['Placebo'] * (tamanho_bloco //2))
+        bloco = (['2506091'] * (tamanho_bloco //2) + ['2506092'] * (tamanho_bloco //2))
         random.shuffle(bloco)
         alocacao.extend(bloco)
     return alocacao
@@ -116,34 +122,34 @@ print(df_registros)
 # Calcular quantas ampolas são necessárias por grupo e sexo (com desvio de + 50%)
 # ====================================================================================#
 # Neste estudo Homens receberão dois pellets (ampolas) e Mulheres receberão um pellet (ampola)
-# As ampolas deverão ser catalogadas por centro e braco (exemplo: para as ampolas do centro 1 para o braco placebo, o nome devera cer "centro_1_P001", "centro_1_P002", etc.)
+# As ampolas deverão ser catalogadas por centro e braco (exemplo: para as ampolas do centro 1 para o braco 2506092, o nome devera cer "centro_1_P001", "centro_1_P002", etc.)
 # O número de ampolas por centro e braco será igual ao número previsto de participantes alocados no braco (com desvio de + 50%)
 
-tratamento_estrato_2_a = sum(
+b1_estrato_2_a = sum(
     1 for r in registros
-    if r['Gênero'] == 'Masculino' and r['Alocação'] == 'Tratamento')*2
-tratamento_estrato_2_b = sum(
+    if r['Gênero'] == 'Masculino' and r['Alocação'] == '2506091')*2
+b1_estrato_2_b = sum(
     1 for r in registros
-    if r['Gênero'] == 'Feminino' and r['Alocação'] == 'Tratamento'
+    if r['Gênero'] == 'Feminino' and r['Alocação'] == '2506091'
 )
-total_ampolas_tratamento = (tratamento_estrato_2_a  + tratamento_estrato_2_b)  # +50% de desvio
+total_ampolas_2506091 = (b1_estrato_2_a  + b1_estrato_2_b)  # +50% de desvio
 
-placebo_estrato_2_a = sum(
+b2_estrato_2_a = sum(
     1 for r in registros
-    if r['Gênero'] == 'Masculino' and r['Alocação'] == 'Placebo')*2
+    if r['Gênero'] == 'Masculino' and r['Alocação'] == '2506092')*2
 
-placebo_estrato_2_b = sum(
+b2_estrato_2_b = sum(
     1 for r in registros
-    if r['Gênero'] == 'Feminino' and r['Alocação'] == 'Placebo'
+    if r['Gênero'] == 'Feminino' and r['Alocação'] == '2506092'
 )
 
-total_ampolas_placebo = (placebo_estrato_2_a + placebo_estrato_2_b)  # +50% de desvio
+total_ampolas_2506092 = (b2_estrato_2_a + b2_estrato_2_b)  # +50% de desvio
 
 
-total_geral = total_ampolas_tratamento + total_ampolas_placebo
+total_geral = total_ampolas_2506091 + total_ampolas_2506092
 
-print(tratamento_estrato_2_a, tratamento_estrato_2_b, total_ampolas_tratamento)
-print(placebo_estrato_2_a, placebo_estrato_2_b, total_ampolas_placebo)
+print(b1_estrato_2_a, b1_estrato_2_b, total_ampolas_2506091)
+print(b2_estrato_2_a, b2_estrato_2_b, total_ampolas_2506092)
 print("Total de ampolas:", total_geral)
 # ====================================================================================#
 # Calcular a quantidade de ampolas necessárias por centro e braço
@@ -151,7 +157,7 @@ print("Total de ampolas:", total_geral)
 total_ampolas = {}
 
 for centro in estrato_centros:
-    for braco in ['Tratamento', 'Placebo']:
+    for braco in ['2506091', '2506092']:
         # Contar quantos participantes masculinos neste (centro, braco)
         qtd_masc = df_registros[
             (df_registros['Centro'] == centro) &
@@ -167,9 +173,9 @@ for centro in estrato_centros:
         ].shape[0]
 
         # Calcular a quantidade de ampolas necessárias
-        if braco == 'Tratamento':
+        if braco == '2506091':
             qtd_ampolas = (qtd_masc * 2) + qtd_fem
-        else:  # Placebo
+        else:  # 2506092
             qtd_ampolas = (qtd_masc * 2) + qtd_fem
         
         # calcular o total de ampolas
@@ -180,18 +186,22 @@ for centro in estrato_centros:
 # ====================================================================================#
 # Os textos das etiquetas das ampolas serão geradas de forma aleatória, de acordo com o número de ampolas necessárias por Centro, gênero e braço.
 # Cada centro terá na etiqueta das ampolas o nome do centro (ou código do centro ) e o número da amostra (exemplo: centro_1_P001, centro_1_P002, etc.)
-def gerar_etiquetas_ampola(centro:int, braco: str, quantidade: int) -> list:
+def gerar_etiquetas_ampola(centro:int, braco: str, numero: int) -> list:
     """
     Gera uma lista de etiquetas de ampolas para um determinado centro e braco.
     As etiquetas são formatadas como "centro_{centro}_{braco}{numero}", onde:
-    - centro: é o número do centro (exemplo: 1, 2, 3, 4)
-    - braco: é o braço do estudo (exemplo: "P" para Placebo, "T" para Tratamento)
-    - numero: é o número da amostra (exemplo: 001, 002, etc.)
+    - centro: é o número do centro (exemplo: 18,19,20,21,22,23,24,25,26,27). Cada centro receberá uma quantidade exata de ampolas (18 ampolas de 2506091 e 18 ampolas de 2506092)
+    -- O centro 18 receberá as ampolas 3 ampolas de 2506091 e 3 de 2506092, sendo 2 ampolas de 2506091 para homens e 1 ampola para mulheres. O mesmo para as ampolas de 2506092.
+    - braco: é o braço do estudo (exemplo: "2506092" para 2506092, "2506091" para Oxandrolona)
+    - numero: é o número da amostra (001 a 108 para o 2506091 e 109 a 216 para o 2506092)
     Os códigos serão embaralhados antes de retornar para garantir aleatoriedade na distribuição
     """
-    prefixo = f"centro_{centro}_{braco[0].upper()}"  # P ou T
-    etiquetas =[f"{prefixo}{i:03d}" for i in range (1, quantidade +1)]
-    random.shuffle(etiquetas)
+    etiquetas = []
+    for i in range(1, numero + 1):
+        etiqueta = f"centro_{centro}_{braco}{str(i).zfill(3)}"
+        etiquetas.append(etiqueta)
+    
+    random.shuffle(etiquetas)  # Embaralhar as etiquetas para garantir aleatoriedade
     return etiquetas
 # ====================================================================================#
 # Gerar dicionario de pool de etiquetas
@@ -252,7 +262,7 @@ df_registros = df_registros[colunas_reordenadas]
 # ====================================================================================#
 
 # Exportar para CSV na pasta csv
-df_registros.to_csv(r'.\csv\randomizacao_redcap.csv', index=False, encoding='utf-8-sig')
+df_registros.to_csv(r'.\csv\randomizacao_imox.csv', index=False, encoding='utf-8-sig')
 # Exportar para Excel na pasta excel
-df_registros.to_excel(r'.\xlsx\randomizacao_redcap.xlsx', index=False, engine='openpyxl')
+df_registros.to_excel(r'.\xlsx\randomizacao_imox.xlsx', index=False, engine='openpyxl')
 # ====================================================================================#
