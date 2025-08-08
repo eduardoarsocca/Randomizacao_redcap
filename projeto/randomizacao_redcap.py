@@ -2,251 +2,212 @@ import pandas as pd
 import random
 import openpyxl
 
-
-
-
 # ====================================================================================#
 # Configurações iniciais
 # ====================================================================================#
-# Semente para reprodutibilidade
-random.seed(42)
+# Semente para reprodutibilidade (42 e 81)
+# semente =81
+semente = 42 
+random.seed(semente)
 
-#tamanho da amostra (n)
-total_participantes = 160  
-
-# Variáveis de interesse
-# Estrato 1: Centros (Sites)
-estrato_centros = [18,19,20,21,22,23,24,25,26,27]  # Lista de centros (códigos dos centros)
-
-#Meta do total de participantes por centro
-#Cade centro tem uma meta unica de participantes, mas o total de participantes no estudo (somando todos os centros) é fixo em total_participantes
+# ====================================================================================#
+# Centros e metas (total por centro)
+# ====================================================================================#
+estrato_centros = [1,2,3,4,5,6,7,8,9,10]  # Lista de centros (códigos dos centros - REDCAP DAGs)
 meta_participantes_por_centro = {
-    18: 16,
-    19: 16,
-    20: 16,
-    21: 16,
-    22: 16,
-    23: 16,
-    24: 16,
-    25: 16,
-    26: 16,
-    27: 16
+    1:12,
+    2:8,
+    3:16,
+    4:8,
+    5:12,
+    6:12,
+    7:8,
+    8:8,
+    9:8,
+    10:12
 }
 
-# os participentes serão alocados em cada centro de acordo com a meta de participantes por centro
-numero_centros = len(estrato_centros)
-# Verificar se a soma das metas de participantes por centro é igual ao total de participantes
-assert sum(meta_participantes_por_centro.values()) == total_participantes, (
-    f"A soma das metas de participantes por centro ({sum(meta_participantes_por_centro.values())})"
-    f" deve ser igual ao total de participantes ({total_participantes})."
-)
-
-# Distribuição de participantes por centro
-participantes_por_centro = total_participantes // numero_centros
-
-# Estrato 2: Sexo
-estrato_genero = ['Masculino', 'Feminino']
-
-# Distribuição de participantes por genero por centro
-# Cada Centro deverá ter 50% de participantes masculinos e 50% de participantes femininos
-# Cada centro tem uma meta distinta de participantes (meta_participantes_por_centro), mas a distribuição de gênero é fixa
-# Portanto, o número de participantes por gênero em cada centro será metade do total de participantes por centro
-participantes_por_genero_por_centro = participantes_por_centro // 2
-
-
+# ====================================================================================#
+# Braços do estudo
+# ====================================================================================#
+bracos = ['1', '2']  # Braços do estudo
+# Braços com códigos específicos 1: '2506091'/ Oxandrolona, 2: '2506092'/Placebo
 
 # ====================================================================================#
-# Parâmetros de randomização em blocos (block randomization)
+# Gênero dos participantes
 # ====================================================================================#
-## Tamanho do bloco
-tamanho_bloco = 4
-assert participantes_por_genero_por_centro % tamanho_bloco == 0,(
-    f"O número de participantes por gênero em cada centro ({participantes_por_genero_por_centro})"
-    f" deve ser divisível pelo tamanho do bloco ({tamanho_bloco})."
-)
+generos = ['1', '2']  # Gêneros dos participantes
+# Gêneros com códigos específicos 1: '1'/ Feminino, 2: '2'/ Masculino
 
 # ====================================================================================#
-# Randomização em blocos
-# ====================================================================================#
-# Função para criar blocos de randomização
-def criar_blocos_randomizacao(tamanho_amostral: int, tamanho_bloco: int) -> list:
-    assert tamanho_amostral % tamanho_bloco == 0,(
-        f"{tamanho_amostral} não é divisivel por {tamanho_bloco}"
-    )
+# Função: Gerar etiquetas
 
-    alocacao = []
-    
-    total_blocos = tamanho_amostral // tamanho_bloco
-    print(total_blocos, type(total_blocos))
-    for _ in range(total_blocos):
-        bloco = (['2506091'] * (tamanho_bloco //2) + ['2506092'] * (tamanho_bloco //2))
-        random.shuffle(bloco)
-        alocacao.extend(bloco)
-    return alocacao
-   
-# ====================================================================================#
-# Construir registros estratificados por Centro → Gênero, considerando a meta de participantes por centro
+## Regras:
+### 1. Etiquetas: gerar listas por centro e por braço, SEM sobreposição
+### 2. Regra: Distribuição será dada por braço em cada centro, consome 3/4 * meta etiquetas(porque em cada braço metade dos participantes; e dentro do braço 1:1 sexo; homens consomem 2 cada e mulheres 1 cada → n_homens*2 + n_mulheres*1 = 3/4 * meta)
 # ====================================================================================#
 
-registros = []
-
-# Estrato 1: Alocar participantes por centro
-for centro in estrato_centros:
-    #1. Alocar Homens (estrato_2_a) e Mulheres (estrato_2_b) separadamente
-    estrato_2_a = criar_blocos_randomizacao(
-        participantes_por_genero_por_centro,
-        tamanho_bloco
-    )
-    estrato_2_b = criar_blocos_randomizacao(
-        participantes_por_genero_por_centro,
-        tamanho_bloco
-    )
-    #Preencher os registros do estrato_2_a
-    for braco in estrato_2_a:
-        registros.append({
-            'Centro': centro,
-            'Gênero': 'Masculino',
-            'Alocação': braco
-        })
-    #Preencher os registros do estrato_2_b
-    for braco in estrato_2_b:
-        registros.append({  
-            'Centro': centro,
-            'Gênero': 'Feminino',
-            'Alocação': braco
-        })
-
-df_registros = pd.DataFrame(registros)
-print(df_registros)
-# ====================================================================================#
-# Calcular quantas ampolas são necessárias por grupo e sexo (com desvio de + 50%)
-# ====================================================================================#
-# Neste estudo Homens receberão dois pellets (ampolas) e Mulheres receberão um pellet (ampola)
-# As ampolas serão caracterizadas pelo ID do centro (18 a 27), pelo Braço do estudo (2506091 para Oxandrolona e 2506092 para Placebo) e pelo número da ampola (001 a 108 para 2506091 e 109 a 216 para 2506092).
-# Cada homem recebera duas ampolas cada braço (Oxandrolona ou Placebo) e as mulheres 1 ampola (Oxandrolona ou Placebo). Caso o homem seja alocado no braço 2506091, ele receberá duas ampolas de Oxandrolona, e se for alocado no braço 2506092, receberá duas ampolas de Placebo. Caso a mulher seja alocada no braço 2506091, ela receberá uma ampola de Oxandrolona, e se for alocada no braço 2506092, receberá uma ampola de Placebo.
-# O número da ampola é único e não deve se repetir entre os participantes, ou seja, cada participante receberá uma ampola com um número único.
-# para faciliar a distribuição entre os centros, imaginando que eles receberão o mesmo número de ampolas de oxandrolona e placebos, sabendo que serão 216 ampolas no total, sendo 108 de Oxandrolona e 108 de Placebo.
-# Cada bloco terá 4 indivíduos, sendo 2 homens e 2 mulheres. Em adicional, cada bloco terá 1 homem alocado no braço 2506091 (Oxandrolona) e 1 homem alocado no braço 2506092 (Placebo), e 1 mulher alocada no braço 2506091 (Oxandrolona) e 1 mulher alocada no braço 2506092 (Placebo). Dessa forma, cada braço recebera 3 ampolas de Oxandrolona e 3 ampolas de Placebo, totalizando 6 ampolas por bloco.
-# Como cada centro terá 16 participantes, e cada bloco tem 4 participantes, cada centro terá 4 blocos, totalizando 24 ampolas por centro (12 de Oxandrolona e 12 de Placebo).
-
-braco_1_estrato_2_a = '2506091'  # Braço 1 (Oxandrolona)
-braco_1_estrato_2_b = '2506091'  # Braço 2 (Oxandrolona)
-braco_2_estrato_2_a = '2506092'  # Braço 1 (Placebo)
-braco_2_estrato_2_b = '2506092'  # Braço 2 (Placebo)
-
-# ====================================================================================#
-# Calcular a quantidade de ampolas necessárias por centro e braço
-# ====================================================================================#
-total_ampolas = {}
-
-for centro in estrato_centros:
-    for braco in ['2506091', '2506092']:
-        # Contar quantos participantes masculinos neste (centro, braco)
-        qtd_masc = df_registros[
-            (df_registros['Centro'] == centro) &
-            (df_registros['Gênero'] == 'Masculino') &
-            (df_registros['Alocação'] == braco)
-        ].shape[0]
-
-        # Contar quantos participantes femininos neste (centro, braco)
-        qtd_fem = df_registros[
-            (df_registros['Centro'] == centro) &
-            (df_registros['Gênero'] == 'Feminino') &
-            (df_registros['Alocação'] == braco)
-        ].shape[0]
-
-        # Calcular a quantidade de ampolas necessárias
-        if braco == '2506091':
-            qtd_ampolas = (qtd_masc * 2) + qtd_fem
-        else:  # 2506092
-            qtd_ampolas = (qtd_masc * 2) + qtd_fem
-        
-        # calcular o total de ampolas
-        total_ampolas[(centro, braco)] = qtd_ampolas
-
-# ====================================================================================#
-# Gerar o código das etiqueta das ampolas de forma aleatória (embaralhar)
-# ====================================================================================#
-# Os textos das etiquetas das ampolas serão geradas de forma aleatória, de acordo com o número de ampolas necessárias por Centro, gênero e braço.
-# Cada centro terá na etiqueta das ampolas o nome do centro (ou código do centro ) e o número da amostra (exemplo: centro_1_P001, centro_1_P002, etc.)
-def gerar_etiquetas_ampola(centro:int, braco: str, numero: int) -> list:
-    """
-    Gera uma lista de etiquetas de ampolas para um determinado centro e braco.
-    As etiquetas são formatadas como "centro_{centro}_{braco}{numero}", onde:
-    - centro: é o número do centro (exemplo: 18,19,20,21,22,23,24,25,26,27). Cada centro receberá uma quantidade exata de ampolas (18 ampolas de 2506091 e 18 ampolas de 2506092)
-    -- O centro 18 receberá as ampolas 3 ampolas de 2506091 e 3 de 2506092, sendo 2 ampolas de 2506091 para homens e 1 ampola para mulheres. O mesmo para as ampolas de 2506092.
-    - braco: é o braço do estudo (exemplo: "2506092" para 2506092, "2506091" para Oxandrolona)
-    - numero: é o número da amostra (001 a 108 para o 2506091 e 109 a 216 para o 2506092), totalizando 216 ampolas
-    O número da amostra é preenchido com zeros à esquerda para ter sempre 3 dígitos (exemplo: 001, 002, ..., 108 para 2506091 e 109, 110, ..., 216 para 2506092).
-    Os códigos serão embaralhados antes de retornar para garantir aleatoriedade na distribuição
-    """
-    etiquetas = []
-    for i in range(1, numero + 1):
-        etiqueta = f"centro_{centro}_{braco}{str(i).zfill(3)}"
-        etiquetas.append(etiqueta)
-    
-    random.shuffle(etiquetas)  # Embaralhar as etiquetas para garantir aleatoriedade
+def gerar_etiquetas_por_centro(etiqueta_inicio: int) -> dict[int, list[int]]:
+    atual = etiqueta_inicio
+    etiquetas = {}
+    for centro in estrato_centros:
+        meta = meta_participantes_por_centro[centro]
+        quantidade = (3 * meta) // 4  # etiquetas por braço neste centro
+        faixa = list(range(atual, atual+quantidade))
+        random.shuffle(faixa)
+        etiquetas[centro] = faixa
+        atual += quantidade
     return etiquetas
-# ====================================================================================#
-# Gerar dicionario de pool de etiquetas
-pool_etiquetas = {}
 
-for (centro, braco), quantidade in total_ampolas.items():
-    pool_etiquetas[(centro, braco)] = gerar_etiquetas_ampola(centro, braco, quantidade)
+# ====================================================================================#
+# gerando as etiquetas
+# ====================================================================================#
+etiquetas_por_centro = {
+    "1": gerar_etiquetas_por_centro(1), # Inicia em 1
+    "2": gerar_etiquetas_por_centro(109), # Inicia em 109
+}
+
+# ====================================================================================#
+# Checagem de duplicadas dentro de cada braço
+# ====================================================================================#
+for braco in ["1", "2"]:
+    duplicata = [x for c in estrato_centros for x in etiquetas_por_centro[braco][c]]
+    assert len(duplicata) == len(set(duplicata)), f"Duplicatas encontradas no braço {braco}: {duplicata}"
+
+# ====================================================================================#
+# Permutação em blocos: sequência (gênero e braço) por centro
+# cada bloco deverá conter: 1 homem para o braço 1, 1 homem para o braço 2, 1 mulher para o braço 1 e 1 mulher para o braço 2
+# ====================================================================================#
+
+def permutacao_blocos(meta: int):
+    if meta % 4 != 0:
+        raise ValueError(f"Meta {meta} não é múltiplo de 4, não é possível fazer permutação em blocos.")
+    blocos = meta // 4
+    sequecncia = []
+    base = [
+        ("2", "1"),
+        ("2", "2"),
+        ("1", "1"),
+        ("1", "2"),
+    ]
+    for _ in range(blocos):
+        bloco = base[:] # copia
+        random.shuffle(bloco)  # embaralha a ordem dentro do bloco
+        sequecncia.extend(bloco)
+    return sequecncia
+
+# ====================================================================================#
+# Rodar distribuição em todos os centros e braços
+# ====================================================================================#
+resultado = []
+for centro in estrato_centros:
+    meta = meta_participantes_por_centro[centro]
     
-# ====================================================================================#
-# Atribuir as etiquetas a cada participante
-# ====================================================================================#
-lista_ampola1=[]
-lista_ampola2=[]
-
-for idx, row in df_registros.iterrows():
-    centro = row['Centro']
-    braco = row['Alocação']
-    genero = row['Gênero']
-    pool_key = (centro, braco)
+    #Validação: etiquetas por braço no centro
+    esperado_por_braco = (meta // 4) * 3  # 3/4 da meta por braço
+    for braco in bracos:
+        disposicao = len(etiquetas_por_centro[braco][centro])
+        if disposicao < esperado_por_braco:
+            raise ValueError(f"Etiquetas insuficientes no centro {centro} para o braço {braco}."
+                             f"Esperado: {esperado_por_braco}, encontrado: {disposicao}")
     
-    if genero == 'Masculino':
-        etiqueta1 = pool_etiquetas[pool_key].pop(0)  # Retira a primeira etiqueta do pool
-        etiqueta2 = pool_etiquetas[pool_key].pop(0)  # Retira a segunda etiqueta do pool
-        lista_ampola1.append(etiqueta1)
-        lista_ampola2.append(etiqueta2)
-    else:  # Feminino
-        etiqueta1 = pool_etiquetas[pool_key].pop(0)
-        lista_ampola1.append(etiqueta1)
-        lista_ampola2.append('')
-
-#Adicionar as colunas das etiquetas no dataframe
-df_registros['Etiqueta_Ampola1'] = lista_ampola1
-df_registros['Etiqueta_Ampola2'] = lista_ampola2
+    # Permutação por gênero e braço para o centro
+    sequencia = permutacao_blocos(meta)
+    
+    # Distribuição das etiquetas conforme a sequência
+    for genero, braco in sequencia:
+        etiquetas = etiquetas_por_centro[braco][centro]
+        if genero == '2': # Homem -> consome 2 etiquetas
+            etiquetas = [etiquetas.pop(0), etiquetas.pop(0)]
+            etiquetas_str = " / ".join(f"{x:03}" for x in etiquetas)
+        else:  # Mulher -> consome 1 etiqueta
+            etiquetas_str = f"{etiquetas.pop(0):03}"
+        resultado.append([centro, genero, braco, etiquetas_str])
+        
 
 # ====================================================================================#
-# Inserir o randomization_id e ordenar as colunas
+# Dataframe final
 # ====================================================================================#
-df_registros.insert(
-    loc=0,
-    column='randomization_id',
-    value=[f"R{str(i+1).zfill(3)}" for i in range(len(df_registros))]
+
+df_final = pd.DataFrame(resultado, columns = ["Centro", "Genero", "Braco", "Etiquetas"])
+# mapeia renomes (corrigi "demogarfia" -> "demografia")
+cols_map = {
+    "Centro": "demografia_centro",
+    "Genero": "demogarfia_sexo",
+    "Braco":  "redcap_randomization_group",
+    # "Etiquetas" já está ok
+}
+
+# renomeia e adiciona a coluna vazia
+df_final = (
+    df_final
+      .rename(columns=cols_map)
+      .assign(redcap_randomization_number=pd.NA)
 )
 
-# Reordena colunas para exibir: randomization_id, Centro, Gênero, Alocação, Ampola1,Ampola2
-colunas_reordenadas = [
-    'randomization_id', 
-    'Centro', 
-    'Gênero', 
-    'Alocação', 
-    'Etiqueta_Ampola1', 
-    'Etiqueta_Ampola2'
-]
-
-df_registros = df_registros[colunas_reordenadas]
+df_final = df_final[["redcap_randomization_number", "redcap_randomization_group","demogarfia_sexo","demografia_centro", "Etiquetas"]]
+df_randomizacao = df_final.copy()
+df_randomizacao = df_randomizacao[["redcap_randomization_number", "redcap_randomization_group","demogarfia_sexo","demografia_centro"]]
 
 # ====================================================================================#
-# Exportar o DF para .csv e .xlsx
+# Dataframe etiquetas
 # ====================================================================================#
+df_etiquetas = df_final.copy()
+
+df_etiquetas = df_etiquetas[["Etiquetas", "redcap_randomization_number","demogarfia_sexo","demografia_centro"]]
+cols_map = {
+    "Etiquetas": "redcap_randomization_number",
+    "redcap_randomization_number": "redcap_randomization_group"
+}
+
+df_etiquetas = df_etiquetas.rename(columns=cols_map)
+
+
+# ====================================================================================##
+# Exportar os resultados para csv e excel - Randomização dos participantes
+# ====================================================================================##
 
 # Exportar para CSV na pasta csv
-df_registros.to_csv(r'.\csv\randomizacao_imox.csv', index=False, encoding='utf-8-sig')
+nome_arquivo_csv = f'randomizacao_imox_semente{semente}.csv'
+df_randomizacao.to_csv(r'csv\{}'.format(nome_arquivo_csv), index=False, encoding='utf-8-sig')
+
 # Exportar para Excel na pasta excel
-df_registros.to_excel(r'.\xlsx\randomizacao_imox.xlsx', index=False, engine='openpyxl')
-# ====================================================================================#
+nome_arquivo_excel = f'randomizacao_imox_semente{semente}.xlsx'
+# Verifica se o diretório existe, caso contrário, cria
+with pd.ExcelWriter(r'xlsx\{}'.format(nome_arquivo_excel), engine='openpyxl') as writer:
+    df_randomizacao.to_excel(writer, index=False, sheet_name='Randomizacao Imox Semente {}'.format(semente))
+    # Formatação da planilha
+    planilha = writer.book
+    abas = writer.sheets['Randomizacao Imox Semente {}'.format(semente)]
+    for col in abas.columns:
+        max_length = max(len(str(cell.value)) for cell in col)
+        adjusted_width = (max_length + 2)
+        abas.column_dimensions[col[0].column_letter].width = adjusted_width
+
+# ====================================================================================##
+# Exportar os resultados para csv e excel - distribuição das etiquetas
+# ====================================================================================##
+
+# Exportar para CSV na pasta csv
+nome_arquivo_csv = f'randomizacao_imox_semente{semente}_etiquetas.csv'
+df_etiquetas.to_csv(r'csv\{}'.format(nome_arquivo_csv), index=False, encoding='utf-8-sig')
+
+# Exportar para Excel na pasta excel
+nome_arquivo_excel = f'randomizacao_imox_semente{semente}_etiquetas.xlsx'
+# Verifica se o diretório existe, caso contrário, cria
+with pd.ExcelWriter(r'xlsx\{}'.format(nome_arquivo_excel), engine='openpyxl') as writer:
+    df_etiquetas.to_excel(writer, index=False, sheet_name='Randomizacao Imox Semente {}'.format(semente))
+    # Formatação da planilha
+    planilha = writer.book
+    abas = writer.sheets['Randomizacao Imox Semente {}'.format(semente)]
+    for col in abas.columns:
+        max_length = max(len(str(cell.value)) for cell in col)
+        adjusted_width = (max_length + 2)
+        abas.column_dimensions[col[0].column_letter].width = adjusted_width
+        
+
+
+#Exluir depois
+# Exportar para CSV na pasta csv
+nome_arquivo_csv = f'randomizacao_imox_semente{semente}_completo.csv'
+df_final.to_csv(r'csv\{}'.format(nome_arquivo_csv), index=False, encoding='utf-8-sig')

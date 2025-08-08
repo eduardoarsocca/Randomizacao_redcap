@@ -1,0 +1,41 @@
+﻿redcap_randomization_number,redcap_randomization_group,demogarfia_sexo,demografia_centro
+,1,1,1
+,2,1,1,,,"NOTES:"
+,1,1,2,,," - Do NOT modify the first row, although you may modify, add, or delete any other row in this file."
+,2,1,2,,," - Remember that this file is ONLY a template and should NOT be used as-is as your allocation table."
+,1,1,3,,," - You do not have to delete this 'notes' column when uploading your allocation table (it will be ignored)."
+,2,1,3,,," - Below is a list of all raw coded values and their corresponding option labels for each strata field and/or Data Access Groups."
+,1,1,4
+,2,1,4,,,"Randomization Field: ""randomizacao_randomizacao"" (Randomização)"
+,1,1,5,,,"Your randomization field is a single-select field (for open allocation):"
+,2,1,5,,," - Values in the redcap_randomization_number column are optional"
+,1,1,6,,," - Values in the redcap_randomization_group column are REQUIRED and must match the values for your randomization field"
+,2,1,6,,,"Values/labels for ""randomization_group"" (""randomizacao_randomizacao""):"
+,1,1,7,,,"1","Grupo Asclépio (2506091)"
+,2,1,7,,,"2","Grupo Panaceia (2506092)"
+,1,1,8
+,2,1,8,,,"Values/labels for ""demogarfia_sexo"" (Sexo ao nascimento):"
+,1,1,9,,,"1","Feminino"
+,2,1,9,,,"2","Masculino"
+,1,1,10
+,2,1,10,,,"Values/labels for ""demografia_centro"" (Centro):"
+,1,2,1,,,"1","Maternidade e Cirurgia Nossa Senhora do Rocio S.A."
+,2,2,1,,,"2","Hospital e Maternidade Dr. Christóvão da Gama S.A"
+,1,2,2,,,"3","Irmandade da Santa Casa de Misericórdia de Santos"
+,2,2,2,,,"4","Unimed de Brusque Cooperativa de Trabalho Médico"
+,1,2,3,,,"5","Centro de Investigação Clínica Ciências Médicas (CIC CMMG)"
+,2,2,3,,,"6","Vidamed Care Clínica E Residência Assistida S/A"
+,1,2,4,,,"7","Synvia Laboratorios E Toxicologia Ltda."
+,2,2,4,,,"8","Associação Evangélica Beneficente de Minas Gerais"
+,1,2,5,,,"9","Hospital Estadual Dr. Jayme Santos Neves (Secretaria de Estado da Saúde)"
+,2,2,5,,,"10","Trialstar - Centro de Pesquisas Clínicas LTDA"
+,1,2,6
+,2,2,6
+,1,2,7
+,2,2,7
+,1,2,8
+,2,2,8
+,1,2,9
+,2,2,9
+,1,2,10
+,2,2,10
