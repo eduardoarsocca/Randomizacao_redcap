@@ -6,8 +6,8 @@ import openpyxl
 # Configurações iniciais
 # ====================================================================================#
 # Semente para reprodutibilidade (42 e 81)
-# semente =81
-semente = 42 
+semente =81
+# semente = 42 
 random.seed(semente)
 
 # ====================================================================================#
@@ -16,7 +16,7 @@ random.seed(semente)
 estrato_centros = [1,2,3,4,5,6,7,8,9,10]  # Lista de centros (códigos dos centros - REDCAP DAGs)
 meta_participantes_por_centro = {
     1:12,
-    2:8,
+    2:20,
     3:16,
     4:8,
     5:12,
