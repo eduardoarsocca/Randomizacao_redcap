@@ -1,30 +1,32 @@
 import pandas as pd
 import random
 import openpyxl
+from datetime import datetime
 
 # ====================================================================================#
 # Configurações iniciais
 # ====================================================================================#
 # Semente para reprodutibilidade (42 e 81)
-semente =81
-# semente = 42 
+# semente =81
+semente = 42 
 random.seed(semente)
 
 # ====================================================================================#
 # Centros e metas (total por centro)
 # ====================================================================================#
-estrato_centros = [1,2,3,4,5,6,7,8,9,10]  # Lista de centros (códigos dos centros - REDCAP DAGs)
+estrato_centros = [1,2,3,4,5,6,7,8,9,10,11]  # Lista de centros (códigos dos centros - REDCAP DAGs)
 meta_participantes_por_centro = {
-    1:12,
+    1:20,
     2:20,
-    3:16,
+    3:20,
     4:8,
     5:12,
     6:12,
-    7:8,
-    8:8,
+    7:4, # 2 total mensal
+    8:8, # 4 total mensal
     9:8,
-    10:12
+    10:12,  # 10 total mensal
+    11:4 # 4 total mensal
 }
 
 # ====================================================================================#
@@ -36,7 +38,7 @@ bracos = ['1', '2']  # Braços do estudo
 # ====================================================================================#
 # Gênero dos participantes
 # ====================================================================================#
-# generos = ['1', '2']  # Gêneros dos participantes
+generos = ['1', '2']  # Gêneros dos participantes
 # Gêneros com códigos específicos 1: '1'/ Feminino, 2: '2'/ Masculino
 
 # ====================================================================================#
@@ -168,11 +170,11 @@ df_etiquetas = df_etiquetas.rename(columns=cols_map)
 # ====================================================================================##
 
 # Exportar para CSV na pasta csv
-nome_arquivo_csv = f'randomizacao_imox_semente{semente}.csv'
+nome_arquivo_csv = f'randomizacao_imox_semente{semente}-.csv'
 df_randomizacao.to_csv(r'csv\{}'.format(nome_arquivo_csv), index=False, encoding='utf-8-sig')
 
 # Exportar para Excel na pasta excel
-nome_arquivo_excel = f'randomizacao_imox_semente{semente}.xlsx'
+nome_arquivo_excel = f'randomizacao_imox_semente{semente}-{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
 # Verifica se o diretório existe, caso contrário, cria
 with pd.ExcelWriter(r'xlsx\{}'.format(nome_arquivo_excel), engine='openpyxl') as writer:
     df_randomizacao.to_excel(writer, index=False, sheet_name='Randomizacao Imox Semente {}'.format(semente))
@@ -189,11 +191,11 @@ with pd.ExcelWriter(r'xlsx\{}'.format(nome_arquivo_excel), engine='openpyxl') as
 # ====================================================================================##
 
 # Exportar para CSV na pasta csv
-nome_arquivo_csv = f'randomizacao_imox_semente{semente}_etiquetas.csv'
+nome_arquivo_csv = f'randomizacao_imox_semente{semente}_etiquetas-{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
 df_etiquetas.to_csv(r'csv\{}'.format(nome_arquivo_csv), index=False, encoding='utf-8-sig')
 
 # Exportar para Excel na pasta excel
-nome_arquivo_excel = f'randomizacao_imox_semente{semente}_etiquetas.xlsx'
+nome_arquivo_excel = f'randomizacao_imox_semente{semente}_etiquetas-{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
 # Verifica se o diretório existe, caso contrário, cria
 with pd.ExcelWriter(r'xlsx\{}'.format(nome_arquivo_excel), engine='openpyxl') as writer:
     df_etiquetas.to_excel(writer, index=False, sheet_name='Randomizacao Imox Semente {}'.format(semente))
@@ -209,5 +211,5 @@ with pd.ExcelWriter(r'xlsx\{}'.format(nome_arquivo_excel), engine='openpyxl') as
 
 #Exluir depois
 # Exportar para CSV na pasta csv
-nome_arquivo_csv = f'randomizacao_imox_semente{semente}_completo.csv'
+nome_arquivo_csv = f'randomizacao_imox_semente{semente}_completo-{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
 df_final.to_csv(r'csv\{}'.format(nome_arquivo_csv), index=False, encoding='utf-8-sig')
