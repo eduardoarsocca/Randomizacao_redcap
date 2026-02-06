@@ -65,14 +65,14 @@ limite_etiquetas_padrao = {
 # ====================================================================================#
 participantes_ja_randomizados = {
     1: [
-        ("2", "2", [110, 116]),  # Homem
-        ("2", "1", [1, 2]),      # Homem
-        ("2", "1", [4, 6]),      # Homem
-        ("2", "2", [113, 114])   # Homem
+        ("2", "2", [110, 116]),  # Homem, Braço 2, etiquetas 110 e 116 
+        ("2", "1", [1, 2]),      # Homem, Braço 1, etiquetas 1 e 2
+        ("2", "1", [4, 6]),      # Homem, Braço 1, etiquetas 4 e 6
+        ("2", "2", [113, 114])   # Homem, Braço 2, etiquetas 113 e 114
     ],
     2: [
-        ("2", "2", [123, 131]),  # Homem
-        ("1", "1", [23]),        # Mulher
+        ("2", "2", [123, 131]),  # Homem, Braço 2, etiquetas 123 e 131
+        ("1", "1", [23]),        # Mulher, Braço 1, etiqueta 23
     ]
 }
 
@@ -412,6 +412,7 @@ for centro in estrato_centros:
             "Tipo": "NOVO"
         })
 
+
 # ====================================================================================#
 # Processamento de Dados
 # ====================================================================================#
@@ -434,9 +435,174 @@ df_etiquetas = df_final.copy()
 df_etiquetas = df_etiquetas[["Etiquetas", "redcap_randomization_group", "demogarfia_sexo", "demografia_centro", "Tipo"]]
 df_etiquetas.columns = ["Etiquetas", "Braço", "Sexo", "Centro", "Tipo"]
 
+
+# ====================================================================================#
+# 🆕 Randomização para o subgrupo PK
+# ====================================================================================#
+print("\n" + "="*80)
+print("🔬 RANDOMIZAÇÃO DO SUBGRUPO PK")
+print("="*80)
+
+# 1. Configurações do subgrupo PK
+centros_pk_primarios = [1, 2]  # Centros que devem somar exatamente 20
+centro_pk_adicional = 3         # Centro com alocação adicional
+meta_pk_centros_1_2 = 20       # Meta fixa para centros 1 e 2 somados
+
+# 2. Filtrar apenas participantes do braço 1 dos centros elegíveis
+df_elegiveis_pk_1_2 = df_final[
+    (df_final['redcap_randomization_group'] == '1') & 
+    (df_final['demografia_centro'].isin(centros_pk_primarios))
+].copy()
+
+total_elegiveis_1_2 = len(df_elegiveis_pk_1_2)
+print(f"\n📋 Participantes elegíveis para PK (Braço 1, Centros 1-2): {total_elegiveis_1_2}")
+
+# 3. Garantir que temos participantes suficientes nos centros 1 e 2
+if total_elegiveis_1_2 < meta_pk_centros_1_2:
+    raise ValueError(
+        f"❌ ERRO: Apenas {total_elegiveis_1_2} participantes elegíveis nos Centros 1-2, "
+        f"mas a meta é {meta_pk_centros_1_2}"
+    )
+    
+    
+# 4. Calcular distribuição proporcional para centros 1 e 2
+distribuicao_pk_por_centro = {}
+
+for centro in centros_pk_primarios:
+    n_elegiveis_centro = len(df_elegiveis_pk_1_2[df_elegiveis_pk_1_2['demografia_centro'] == centro])
+    if total_elegiveis_1_2 > 0:
+        proporcao = n_elegiveis_centro / total_elegiveis_1_2
+        n_pk_centro = round(meta_pk_centros_1_2 * proporcao)
+    else:
+        n_pk_centro = 0
+    distribuicao_pk_por_centro[centro] = {
+        'elegiveis': n_elegiveis_centro,
+        'meta_pk': n_pk_centro
+    }
+
+# 5. Ajuste fino para garantir exatamente meta_pk_centros_1_2 nos centros 1 e 2
+total_alocado_1_2 = sum(distribuicao_pk_por_centro[c]['meta_pk'] for c in centros_pk_primarios)
+diferenca = meta_pk_centros_1_2 - total_alocado_1_2
+
+if diferenca != 0:
+    # Ajustar no centro com mais elegíveis entre 1 e 2
+    centro_ajuste = max(
+        centros_pk_primarios, 
+        key=lambda c: distribuicao_pk_por_centro[c]['elegiveis']
+    )
+    distribuicao_pk_por_centro[centro_ajuste]['meta_pk'] += diferenca
+    print(f"⚙️ Ajuste fino: {'+' if diferenca > 0 else ''}{diferenca} participante(s) no Centro {centro_ajuste}")
+
+# 6. Validar distribuição para centros 1 e 2
+total_final_pk_1_2 = sum(distribuicao_pk_por_centro[c]['meta_pk'] for c in centros_pk_primarios)
+assert total_final_pk_1_2 == meta_pk_centros_1_2, f"Erro: total PK centros 1-2 = {total_final_pk_1_2}, esperado = {meta_pk_centros_1_2}"
+
+
+# 7. Calcular alocação para centro 3 (50% dos elegíveis do Braço 1)
+df_elegiveis_pk_3 = df_final[
+    (df_final['redcap_randomization_group'] == '1') & 
+    (df_final['demografia_centro'] == centro_pk_adicional)
+].copy()
+
+n_elegiveis_centro_3 = len(df_elegiveis_pk_3)
+n_pk_centro_3 = n_elegiveis_centro_3 // 2  # 50% dos elegíveis
+
+distribuicao_pk_por_centro[centro_pk_adicional] = {
+    'elegiveis': n_elegiveis_centro_3,
+    'meta_pk': n_pk_centro_3
+}
+
+print(f"\n📊 Distribuição do Subgrupo PK por Centro:")
+for centro in centros_pk_primarios:
+    info = distribuicao_pk_por_centro[centro]
+    print(f"   Centro {centro}: {info['meta_pk']}/{info['elegiveis']} participantes alocados no PK")
+
+print(f"   Centro {centro_pk_adicional}: {n_pk_centro_3}/{n_elegiveis_centro_3} participantes alocados no PK (50% do Braço 1)")
+
+total_pk_geral = sum(d['meta_pk'] for d in distribuicao_pk_por_centro.values())
+print(f"\n✅ Total geral no Subgrupo PK: {total_pk_geral} ({meta_pk_centros_1_2} dos centros 1-2 + {n_pk_centro_3} do centro 3)")
+
+# 8.  Gerar randomização para cada centro elegível (1, 2 e 3)
+resultado_pk = []
+
+for centro in [1, 2, 3]:
+    # Filtrar participantes do centro atual elegíveis para PK
+    df_centro_braco1 = df_final[
+        (df_final['redcap_randomization_group'] == '1') & 
+        (df_final['demografia_centro'] == centro)
+    ].copy()
+    
+    n_total_centro = len(df_centro_braco1)
+    n_pk_centro = distribuicao_pk_por_centro[centro]['meta_pk']
+    n_nao_pk_centro = n_total_centro - n_pk_centro
+    
+    # Criar lista de alocações: "PK" para subgrupo PK, "Não PK" para não PK
+    alocacoes_centro = ["PK"] * n_pk_centro + ["Não PK"] * n_nao_pk_centro
+    random.shuffle(alocacoes_centro)
+    
+    # Adicionar ao resultado
+    for idx, (_, row) in enumerate(df_centro_braco1.iterrows()):
+        resultado_pk.append({
+            "demografia_centro": centro,
+            "demogarfia_sexo": row['demogarfia_sexo'],
+            "redcap_randomization_group": row['redcap_randomization_group'],
+            "subgrupo_pk": alocacoes_centro[idx],
+            "Tipo": row['Tipo']
+        })
+
+
+# 9. Adicionar participantes do Braço 2 (Placebo) dos centros 1, 2 e 3 como "Não PK"
+df_braco2_centros_pk = df_final[
+    (df_final['redcap_randomization_group'] == '2') & 
+    (df_final['demografia_centro'].isin([1, 2, 3]))
+].copy()
+
+for _, row in df_braco2_centros_pk.iterrows():
+    resultado_pk.append({
+        "demografia_centro": row['demografia_centro'],
+        "demogarfia_sexo": row['demogarfia_sexo'],
+        "redcap_randomization_group": row['redcap_randomization_group'],
+        "subgrupo_pk": "Não PK",
+        "Tipo": row['Tipo']
+    })
+
+# 10 Adicionar TODOS os participantes dos centros 4-11 como "Não PK"
+centros_nao_pk = [4, 5, 6, 7, 8, 9, 10, 11]
+df_centros_nao_pk = df_final[df_final['demografia_centro'].isin(centros_nao_pk)].copy()
+
+for _, row in df_centros_nao_pk.iterrows():
+    resultado_pk.append({
+        "demografia_centro": row['demografia_centro'],
+        "demogarfia_sexo": row['demogarfia_sexo'],
+        "redcap_randomization_group": row['redcap_randomization_group'],
+        "subgrupo_pk": "Não PK",
+        "Tipo": row['Tipo']
+    })
+
+# 11 Criar DataFrame
+df_subgrupo_pk = pd.DataFrame(resultado_pk)
+df_subgrupo_pk = df_subgrupo_pk.sort_values(
+    by=['demografia_centro', 'redcap_randomization_group']
+).reset_index(drop=True)
+
+# 12 Adicionar coluna de número de randomização
+df_subgrupo_pk.insert(0, "redcap_randomization_number", pd.NA)
+
+# 13 Reorganizar colunas
+ordem_colunas_pk = [
+    "redcap_randomization_number",
+    "demografia_centro",
+    "redcap_randomization_group",
+    "demogarfia_sexo",
+    "subgrupo_pk",
+    "Tipo"
+]
+df_subgrupo_pk = df_subgrupo_pk[ordem_colunas_pk]
+
 # ====================================================================================#
 # Estatísticas
 # ====================================================================================#
+
 print("\n" + "="*80)
 print("📊 RESUMO ESTATÍSTICO DA RANDOMIZAÇÃO")
 print("="*80)
@@ -476,7 +642,72 @@ for centro in estrato_centros:
 print("\n" + "="*80)
 
 # ====================================================================================#
-# Exportação
+# Estatísticas do Subgrupo PK
+# ====================================================================================#
+
+print("\n" + "="*80)
+print("📊 RESUMO ESTATÍSTICO - SUBGRUPO PK")
+print("="*80)
+
+total_pk = df_subgrupo_pk[df_subgrupo_pk['subgrupo_pk'] == 'PK'].shape[0]
+total_nao_pk = df_subgrupo_pk[df_subgrupo_pk['subgrupo_pk'] == 'Não PK'].shape[0]
+
+print(f"\n🧬 Alocação no Subgrupo PK:")
+print(f"   PK: {total_pk}")
+print(f"   Não PK: {total_nao_pk}")
+print(f"   TOTAL: {len(df_subgrupo_pk)}")
+
+# Validação da regra principal
+pk_centros_1_2 = df_subgrupo_pk[
+    (df_subgrupo_pk['demografia_centro'].isin([1, 2])) & 
+    (df_subgrupo_pk['subgrupo_pk'] == 'PK')
+].shape[0]
+
+pk_centro_3 = df_subgrupo_pk[
+    (df_subgrupo_pk['demografia_centro'] == 3) & 
+    (df_subgrupo_pk['subgrupo_pk'] == 'PK')
+].shape[0]
+
+print(f"\n✅ Validação da regra:")
+print(f"   Centros 1 e 2: {pk_centros_1_2} participantes no PK (meta: {meta_pk_centros_1_2})")
+print(f"   Centro 3: {pk_centro_3} participantes no PK (adicional)")
+print(f"   Total PK: {pk_centros_1_2} + {pk_centro_3} = {total_pk}")
+
+print(f"\n🏥 Distribuição por Centro:")
+for centro in estrato_centros:
+    df_centro_pk = df_subgrupo_pk[df_subgrupo_pk['demografia_centro'] == centro]
+    pk = df_centro_pk[df_centro_pk['subgrupo_pk'] == 'PK'].shape[0]
+    nao_pk = df_centro_pk[df_centro_pk['subgrupo_pk'] == 'Não PK'].shape[0]
+    
+    if centro in [1, 2, 3]:
+        braco1 = df_centro_pk[df_centro_pk['redcap_randomization_group'] == '1'].shape[0]
+        braco2 = df_centro_pk[df_centro_pk['redcap_randomization_group'] == '2'].shape[0]
+        porcentagem = (pk / braco1 * 100) if braco1 > 0 else 0
+        print(f"   Centro {centro:2d}: PK={pk:2d} | Não PK={nao_pk:2d} | (Braço1={braco1}, {porcentagem:.1f}% no PK)")
+    else:
+        print(f"   Centro {centro:2d}: Não PK={nao_pk:2d} (100% conforme regra)")
+
+print("\n💊 Distribuição por Braço (Centros 1-3):")
+df_centros_123 = df_subgrupo_pk[df_subgrupo_pk['demografia_centro'].isin([1, 2, 3])]
+braco1_pk = df_centros_123[
+    (df_centros_123['redcap_randomization_group'] == '1') & 
+    (df_centros_123['subgrupo_pk'] == 'PK')
+].shape[0]
+braco1_nao_pk = df_centros_123[
+    (df_centros_123['redcap_randomization_group'] == '1') & 
+    (df_centros_123['subgrupo_pk'] == 'Não PK')
+].shape[0]
+braco2_nao_pk = df_centros_123[
+    df_centros_123['redcap_randomization_group'] == '2'
+].shape[0]
+
+print(f"   Braço 1 (Oxandrolona): PK={braco1_pk}, Não PK={braco1_nao_pk}")
+print(f"   Braço 2 (Placebo): Não PK={braco2_nao_pk} (100% conforme regra)")
+
+print("\n" + "="*80)
+
+# ====================================================================================#
+# Exportação dos 3 arquivos
 # ====================================================================================#
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -495,5 +726,13 @@ exportar_excel(df_randomizacao, f"randomizacao_imox_semente{semente}_{timestamp}
 df_etiquetas.to_csv(Path("csv") / f"etiquetas_imox_semente{semente}_{timestamp}.csv", index=False, encoding='utf-8-sig')
 exportar_excel(df_etiquetas, f"etiquetas_imox_semente{semente}_{timestamp}")
 
+# Arquivo 3: Randomização de Subgrupo PK
+df_subgrupo_pk.to_csv(Path("csv") / f"subgrupo_pk_imox_semente{semente}_{timestamp}.csv", index=False, encoding='utf-8-sig')
+exportar_excel(df_subgrupo_pk, f"subgrupo_pk_imox_semente{semente}_{timestamp}")
+
 print(f"\n✅ Sucesso! Arquivos gerados para a semente {semente}")
 print(f"📁 Diretórios: ./csv/ e ./xlsx/")
+print(f"\n📄 Arquivos gerados:")
+print(f"   1. randomizacao_imox_semente{semente}_{timestamp}.csv/.xlsx")
+print(f"   2. etiquetas_imox_semente{semente}_{timestamp}.csv/.xlsx")
+print(f"   3. subgrupo_pk_imox_semente{semente}_{timestamp}.csv/.xlsx")
